@@ -1,16 +1,15 @@
-# This is a sample Python script.
+from data.coingecko_api import CoinGeckoData
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+if __name__ == "__main__":
+    # Initialiser l'instance de la classe CoinGeckoData
+    coingecko_data = CoinGeckoData()
 
+    # Récupérer la liste des actifs côtés sur Binance avec leurs informations
+    binance_assets_info = coingecko_data.get_binance_assets_info()
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+    if binance_assets_info:
+        # Faire quelque chose avec les informations récupérées, par exemple les afficher
+        for asset_info in binance_assets_info:
+            print(asset_info)
+    else:
+        print("Impossible de récupérer les informations sur les actifs côtés sur Binance.")
