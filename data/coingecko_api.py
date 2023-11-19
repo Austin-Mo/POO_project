@@ -1,5 +1,8 @@
 # Importer le module pycoingecko
 from pycoingecko import CoinGeckoAPI
+from tqdm import tqdm
+
+# https://pypi.org/project/pycoingecko/ : Documentation de la librairie Python pour l'API CoinGecko
 
 class CoinGeckoData:
     def __init__(self):
@@ -14,7 +17,7 @@ class CoinGeckoData:
         vs_currency = "usd"
         binance_coins_markets = self.get_binance_markets(vs_currency, ids)
 
-        # Créer une liste de dictionnaires contenant le market cap et le tag pour chaque actif
+        # Créer une liste de dictionnaires contenant le market cap, le tag et la description pour chaque actif
         assets_info = self.get_binance_info(binance_coins_markets)
 
         return assets_info
@@ -62,10 +65,10 @@ class CoinGeckoData:
         max_size = 50
 
         # Diviser la liste des identifiants en sous-listes de taille maximale
-        sublists = [ids[i:i+max_size] for i in range(0, len(ids), max_size)]
+        sublists = [ids[i:i + max_size] for i in range(0, len(ids), max_size)]
 
         # Pour chaque sous-liste d'identifiants
-        for sublist in sublists:
+        for sublist in tqdm(sublists):
             try:
                 # Obtenir les données de marché avec la méthode get_coins_markets()
                 sublist_markets = self.coingecko.get_coins_markets(vs_currency=vs_currency, ids=sublist)
@@ -80,14 +83,22 @@ class CoinGeckoData:
 
         return binance_coins_markets
 
+    def get_coin_description(self, coin_id):
+        # Obtenir les données de base de l'actif avec la méthode get_coin_by_id()
+        coin_data = self.coingecko.get_coin_by_id(coin_id)
+
+        # Retourner la description en anglais sous la clé "en"
+        return coin_data["description"]["en"]
+
     def get_binance_info(self, binance_coins_markets):
-        # Créer une liste de dictionnaires contenant le market cap et le tag pour chaque actif
+        # Créer une liste de dictionnaires contenant le market cap, le tag et la description pour chaque actif
         assets_info = []
-        for coin in binance_coins_markets:
+        for coin in tqdm(binance_coins_markets):
+            # Obtenir la description de l'actif à partir de son identifiant
+            #description = self.get_coin_description(coin["id"])  # Description car pas de tags
             assets_info.append({
                 'symbol': coin['symbol'],
                 'market_cap': coin['market_cap'],
+                #'description': description,
             })
-    # Peut-être stocker les datas dans un Excel pour éviter de rappeler ce code à chaque fois (ce qui est un peu long) ?
         return assets_info
-

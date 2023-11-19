@@ -1,15 +1,16 @@
 from data.coingecko_api import CoinGeckoData
+import pandas as pd
 
 if __name__ == "__main__":
-    # Initialiser l'instance de la classe CoinGeckoData
-    coingecko_data = CoinGeckoData()
 
-    # Récupérer la liste des actifs côtés sur Binance avec leurs informations
-    binance_assets_info = coingecko_data.get_binance_assets_info()
+    # Créer une instance de la classe CoinGeckoData
+    cg_data = CoinGeckoData()
 
-    if binance_assets_info:
-        # Faire quelque chose avec les informations récupérées, par exemple les afficher
-        for asset_info in binance_assets_info:
-            print(asset_info)
-    else:
-        print("Impossible de récupérer les informations sur les actifs côtés sur Binance.")
+    # Obtenir les informations des actifs côtés sur Binance
+    assets_info = cg_data.get_binance_assets_info()
+
+    # Créer un dataframe à partir de la liste de dictionnaires
+    df = pd.DataFrame(assets_info)
+
+    # Exporter le dataframe dans un fichier Excel
+    df.to_excel("binance_assets_info.xlsx")
