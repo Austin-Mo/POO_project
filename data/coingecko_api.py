@@ -62,7 +62,7 @@ class CoinGeckoData:
         binance_coins_markets = []
 
         # Définir la taille maximale des sous-listes d'identifiants
-        max_size = 50
+        max_size = 1000
 
         # Diviser la liste des identifiants en sous-listes de taille maximale
         sublists = [ids[i:i + max_size] for i in range(0, len(ids), max_size)]
@@ -83,22 +83,13 @@ class CoinGeckoData:
 
         return binance_coins_markets
 
-    def get_coin_description(self, coin_id):
-        # Obtenir les données de base de l'actif avec la méthode get_coin_by_id()
-        coin_data = self.coingecko.get_coin_by_id(coin_id)
-
-        # Retourner la description en anglais sous la clé "en"
-        return coin_data["description"]["en"]
-
     def get_binance_info(self, binance_coins_markets):
         # Créer une liste de dictionnaires contenant le market cap, le tag et la description pour chaque actif
         assets_info = []
         for coin in tqdm(binance_coins_markets):
             # Obtenir la description de l'actif à partir de son identifiant
-            #description = self.get_coin_description(coin["id"])  # Description car pas de tags
             assets_info.append({
                 'symbol': coin['symbol'],
-                'market_cap': coin['market_cap'],
-                #'description': description,
+                'market_cap': coin['market_cap']
             })
         return assets_info
