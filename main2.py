@@ -8,30 +8,38 @@ from datetime import datetime
 class DataLoader:
 
     def __init__(self, start_date, end_date):
-        self.start_date = start_date
-        self.end_date = end_date
+        self.start_date = int(datetime.strptime(start_date, "%Y-%m-%d").timestamp())
+        self.end_date = int(datetime.strptime(end_date, "%Y-%m-%d").timestamp())
         self.cg = CoinGeckoAPI()
-        self.symbols_list = self.get_tickers()
-        self.market_caps = self.get_market_caps()
+        self.symbols_list, self.id_list = self.get_tickers()
         self.df = self.combine_data()
 
     def get_tickers(self):
         exchanges = self.cg.get_exchanges_list()
         binance_id = next(exchange['id'] for exchange in exchanges if exchange['name'] == 'Binance')
         binance_tickers = self.cg.get_exchanges_tickers_by_id(binance_id)
-        return [ticker['base'] + ticker['target'] for ticker in binance_tickers['tickers']]
+        symbols_list = [ticker['base'] + ticker['target'] for ticker in binance_tickers['tickers']]
+        id_list = [ticker['coin_id'] for ticker in binance_tickers['tickers']]
+        return symbols_list, id_list
 
-    def get_market_caps(self):
-        coins_markets = self.cg.get_coins_markets(vs_currency='usd')
-        market_caps = {coin['id']: coin['market_cap'] for coin in coins_markets}
-        return market_caps
+    def get_market_caps(self, selected_symbols):
+        market_caps = []
+        for symbol in selected_symbols:
+            if symbol in self.symbols_list:
+                coin_id = self.id_list[self.symbols_list.index(symbol)]
+                market_data = self.cg.get_coin_market_chart_range_by_id(id=coin_id, vs_currency='usd',
+                                                                        from_timestamp=self.start_date,
+                                                                        to_timestamp=self.end_date)
+                for timestamp, cap in market_data['market_caps']:
+                    date = datetime.fromtimestamp(timestamp/1000)  # Convert the timestamp to datetime
+                    market_caps.append({'date': date, 'symbol': symbol, 'market_cap': cap})
+
+        df = pd.DataFrame(market_caps)
+        return df
 
     def get_data_for_coin(self, symbol):
-        start_timestamp = int(datetime.strptime(self.start_date, "%Y-%m-%d").timestamp() * 1000)
-        end_timestamp = int(datetime.strptime(self.end_date, "%Y-%m-%d").timestamp() * 1000)
-
-        url = f'https://api.binance.com/api/v3/klines?symbol={symbol}&interval=1d&startTime={start_timestamp}' \
-              f'&endTime={end_timestamp}'
+        url = f'https://api.binance.com/api/v3/klines?symbol={symbol}&interval=1d&startTime={self.start_date}' \
+              f'&endTime={self.end_date}'
         response = requests.get(url)
         candles = response.json()
 
@@ -62,6 +70,11 @@ start_date = "2021-01-01"
 end_date = "2021-12-31"
 
 datas = DataLoader(start_date, end_date)
+
+# Test avec market cap pour les 3 premiers symboles
+selected_symbols = datas.symbols_list[:3]
+market_caps = datas.get_market_caps(selected_symbols)
+print(market_caps)  # ATTENTION, le market cap est en USD ce qui ne correspond pas forcément à la paire.
 
 # import des données avec l'api binance
 
