@@ -160,19 +160,16 @@ class Backtest:
         
 class PerformanceMetrics:
     
-    @staticmethod
     def calculate_total_return(portfolio_values):
        # Calcul du rendement total
        total_return = (portfolio_values[-1] - portfolio_values[0]) / portfolio_values[0]
        return total_return
 
-    @staticmethod
     def calculate_volatility(returns):
        # Calcul de la volatilité
        volatility = np.std(returns)
        return volatility
 
-    @staticmethod
     def calculate_sharpe_ratio(returns, risk_free_rate=0):
      # Calcul du rendement en excès
      excess_returns = returns - risk_free_rate
@@ -186,7 +183,7 @@ class PerformanceMetrics:
 
      return sharpe_ratio
 
-    
+
 class IndexCompositionTracker:
 
     def __init__(self):
