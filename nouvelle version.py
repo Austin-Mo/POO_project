@@ -314,32 +314,42 @@ class PerformanceMetrics:
         sharpe_ratio = PerformanceMetrics.calculate_sharpe_ratio(portfolio_values, risk_free_rate)
         max_drawdown = PerformanceMetrics.calculate_max_drawdown(portfolio_values)
         sortino_ratio = PerformanceMetrics.calculate_sortino_ratio(portfolio_values, risk_free_rate)
-    
+        
         # Création du Dashboard
-        fig, axs = plt.subplots(2, 2, figsize=(10, 8))
-        fig.suptitle('Dashboard de Performance')
+        fig, axs = plt.subplots(2, 2, figsize=(10, 8), gridspec_kw={'hspace': 0.4})
+        fig.suptitle('Dashboard de Performance', y=0.98, fontsize = 20, fontweight='bold')
+        
+        # Ajustement de l'espacement entre le titre de l'axe des ordonnées du graphe en haut à droite et le graphe en haut à gauche
+        plt.subplots_adjust(wspace=0.25)
     
         # Graphique des Valeurs du Portefeuille
-        axs[0, 0].plot(portfolio_values)
-        axs[0, 0].set_title('Valeur du Portefeuille')
+        axs[0, 0].plot(portfolio_values, color = 'green', lw = 2)
+        axs[0, 0].set_title('Valeur du Portefeuille', fontweight='bold')
+        axs[0, 0].set_ylabel('Portfolio value')
+        axs[0, 0].set_xlabel('Days')
     
         # Graphique des Rendements
         axs[0, 1].plot(returns)
-        axs[0, 1].set_title('Rendements (%)')
+        axs[0, 1].set_title('Rendements (%)', fontweight='bold')
+        axs[0, 1].set_ylabel('Returns')
+        axs[0, 1].set_xlabel('Days')
         
-        axs[1, 0].plot(cumulative_returns)
-        axs[1, 0].set_title('Rendements cumulés (%)')
-        
-        axs[1, 1].axis('off')
+        #Graphique des rendements cumulés
+        axs[1, 0].plot(cumulative_returns, color = 'red', lw = 2)
+        axs[1, 0].set_title('Rendements cumulés (%)', fontweight='bold')
+        axs[1, 0].set_ylabel('Cumulative returns')
+        axs[1, 0].set_xlabel('Days')
 
         # Tableau des Métriques de Performance
+        axs[1, 1].axis('off')
+        
         metrics_data = {
             "Rendement Total (%)": [round(total_return * 100, 2)],
             "Rendement Annualisé (%)": [round(annualized_return * 100, 2)],
             "Volatilité (%)": [round(volatility * 100, 2)],
             "Ratio de Sharpe": [round(sharpe_ratio, 2)],
-            "Drawdown Max": [round(max_drawdown, 2)],
-            "Ratio de Sortino": [round(sortino_ratio, 2)]
+            "Ratio de Sortino": [round(sortino_ratio, 2)],
+            "Drawdown Max": [round(max_drawdown, 2)]
         }
 
         metrics_df = pd.DataFrame(metrics_data)
@@ -349,12 +359,19 @@ class PerformanceMetrics:
             table_data.append([col, metrics_df[col].values[0]])
         
         # Centrer le tableau
-        axs[1, 1].table(cellText=table_data, colLabels=["Métrique", "Valeur"], cellLoc="center", loc="center", bbox=[0, 0, 1, 1])
+        table = axs[1, 1].table(cellText=table_data, colLabels=["Métrique", "Valeur"], cellLoc="center", loc="center", bbox=[0, 0, 1, 1])
         
+        # Mettre en gras les titres des colonnes
+        for key, cell in table.get_celld().items():
+            if key[0] == 0:  # La première ligne correspond aux titres des colonnes
+                cell.set_text_props(weight='bold')
+        
+        #Montrer le dashboard
         plt.show()
     
     
-    
+################################################################################# 
+ 
 binance_api_key = 'aoVyyPRzDHHHZgxm0Fzb2s3FZ3aFot46ERv9bGSBHOb8O2G7BfvKtFEY51mXDeJ7'
 binance_api_secret = 'WtAK2hkUwG2pNCayBlhlQmJPWdd9MqrQuZ62AOuky5g8o9LrEjQ66p8xQZnvLYZZ'
 
@@ -370,6 +387,7 @@ PerformanceMetrics.stat_dashboard(test.portfolio_value,r,1)
 plt.plot(datas.dataframes["BTCUSDT"]["Close"])
 plt.plot(r)
 
+####################################################################################"
 
 class IndexCompositionTracker:
 
@@ -460,7 +478,6 @@ class PriceWeightedStrategy(AbstractStrategy):
             self.last_rebalancing = self.backtest.current_date
              
 test2 = PriceWeightedStrategy(datas, 1, 100000, start_date, end_date)
-sum(test2.calculate_weights())
 r2 = PerformanceMetrics.calculate_returns(test2.portfolio_value)
 PerformanceMetrics.stat_dashboard(test2.portfolio_value,r2,1) 
     
