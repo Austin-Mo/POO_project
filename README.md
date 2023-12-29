@@ -12,7 +12,7 @@ Le code est structuré selon les classes suivantes:<br>
     Classe DataLoader :
     
 Elle est responsable de récupérer des données historiques de prix depuis Binance et des données de capitalisation boursière depuis CoinGecko.<br>
-Ces différentes méthodes sont:<br>
+Ses différentes méthodes sont:<br>
 - get_tickers : Récupère une liste de paires de trading (symboles) de Binance qui sont échangées contre USDT.<br>
 - get_historical_market_caps : Récupère des données historiques de capitalisation boursière pour chaque cryptomonnaie dans la plage de dates spécifiée.<br>
 - get_data_for_coin : Récupère des données historiques de prix pour une paire de trading donnée (symbole).<br>
@@ -22,33 +22,37 @@ Ces différentes méthodes sont:<br>
 
     Classe AbstractStrategy :
     
-Une classe de base abstraite définissant deux méthodes abstraites : calculate_weights et apply_strategy.
+Une classe de base abstraite définissant deux méthodes abstraites : calculate_weights et apply_strategy.<br>
 
 
-    Classes MarketCapStrategy :
+    Classe MarketCapStrategy :
     
 - Hérite de AbstractStrategy.
 - Implémente des méthodes pour calculer des poids basés sur la capitalisation boursière et pour rééquilibrer le portefeuille en conséquence.
 - Utilise la classe Backtest pour exécuter le processus de backtesting.
+- Ses méthodes sont:<br>
+    - __init__(self, data, market_caps, rebalancing_window, initial_capital, start_date, end_date) :
+Initialise la stratégie avec les données nécessaires, les capitalisations boursières, la fenêtre de rééquilibrage, le capital initial, la date de début et la date de fin.<br>
+    - calculate_weights(self) : Calcule les poids des actifs en fonction de leurs capitalisations boursières.
+    - rebalancing(self) : Effectue le rééquilibrage du portefeuille en fonction des nouveaux poids calculés.
+    - go_short(self, coin) : Effectue l'action de vente à découvert pour un actif donné.
+    - go_long(self, coin) : Effectue l'action d'achat pour un actif donné.
+    - apply_strategy(self) : Applique la stratégie en effectuant le rééquilibrage si nécessaire.<br>
 
 
-    Classe EqualWeightStrategy :
-  
-- Hérite de AbstractStrategy.
-- Implémente des méthodes pour calculer des poids égaux pour chaque paire de trading et pour rééquilibrer le portefeuille en conséquence.
-- Utilise la classe Backtest pour exécuter le processus de backtesting.
+    Classe EqualWeightStrategy :<br>
+    
+Elle est structurée de la même manière que la classe précedente. Les principales différences étant les inputs pris en compte (pas de market-cap ici) ainsi que dans la façon dont les poids des actifs sont calculés (tous équivalents).<br>
 
 
     Classe PriceWeightedStrategy :
   
-- Hérite de AbstractStrategy.
-- Implémente des méthodes pour calculer des poids basés sur les prix de clôture et pour rééquilibrer le portefeuille en conséquence.
-- Utilise la classe Backtest pour exécuter le processus de backtesting.
+Suis la même structure que la classe précedente hormi dans la façon dont les poids des actifs sont calculés (en fonction de leur prix).<br>
 
 
     Classe Backtest :
   
-- Exécute le processus de backtesting en itérant à travers les données historiques et en appliquant la stratégie.
+  Exécute le processus de backtesting en itérant à travers les données historiques et en appliquant la stratégie.<br>
 
 
     Classe PerformanceMetrics :
@@ -59,7 +63,7 @@ Une classe de base abstraite définissant deux méthodes abstraites : calculate_
 
     Classe IndexCompositionTracker :
   
--Suit la composition de l'indice (portefeuille) à différents moments.
--Utilisation Exemplaire :
--Des instances de EqualWeightStrategy et PriceWeightedStrategy sont créées et testées en utilisant le chargeur de données fourni (DataLoader).
+- Suit la composition de l'indice (portefeuille) à différents moments.
+- Utilisation Exemplaire :
+- Des instances de EqualWeightStrategy et PriceWeightedStrategy sont créées et testées en utilisant le chargeur de données fourni (DataLoader).
 Les métriques de performance sont calculées et affichées en utilisant la classe PerformanceMetrics.
