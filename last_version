@@ -370,18 +370,24 @@ class PerformanceMetrics:
         axs[0, 0].set_title('Valeur du Portefeuille', fontweight='bold')
         axs[0, 0].set_ylabel('Valeur du Portefeuille')
         axs[0, 0].set_xlabel('Date')
+        # Ajuster la taille des valeurs de l'axe des abscisses
+        axs[0, 0].tick_params(axis='x', labelsize=8)
     
         # Graphique des Rendements
         axs[0, 1].plot(returns, color='blue', lw=2)
         axs[0, 1].set_title('Rendements (%)', fontweight='bold')
         axs[0, 1].set_ylabel('Rendements')
         axs[0, 1].set_xlabel('Date')
+        # Ajuster la taille des valeurs de l'axe des abscisses
+        axs[0, 1].tick_params(axis='x', labelsize=8)
         
         # Graphique des Rendements Cumulatifs
         axs[1, 0].plot(cumulative_returns, color='red', lw=2)
         axs[1, 0].set_title('Rendements Cumulatifs (%)', fontweight='bold')
         axs[1, 0].set_ylabel('Rendements Cumulatifs')
         axs[1, 0].set_xlabel('Date')
+        # Ajuster la taille des valeurs de l'axe des abscisses
+        axs[1, 0].tick_params(axis='x', labelsize=8)
 
         # Tableau des Métriques de Performance
         axs[1, 1].axis('off')
