@@ -1,4 +1,4 @@
-    Présentation de notre framework de backtesting d'indices de cryptomonnaies.
+**Présentation de notre framework de backtesting d'indices de cryptomonnaies**
 
 Le code est structuré selon les classes suivantes:<br>
 1- La classe data loader pour récupérer les données.<br>
@@ -6,10 +6,10 @@ Le code est structuré selon les classes suivantes:<br>
 3- Les classes 'MarketCapStrategy', 'EqualWeightStrategy' et 'PriceWeightedStrategy' qui correspondent aux trois types d'indices que l'utilisateur peut choisir de construire.<br>
 4- La classe 'Backtest' qui exécute le processus de backtesting en itérant à travers les données historiques et en appliquant la stratégie.<br>
 5- La classe 'PerformanceMetrics' qui renvoie les principaux indicateurs de performance d'une stratégie créee par l'utilisateur.<br>
-6- La clase 'IndexCompositionTracker' qui renvoie la composition historique des actifs de la stratéie.<br>
+6- La clase 'IndexCompositionTracker' qui renvoie la composition historique des actifs de la stratégie.<br>
 
 
-    Classe DataLoader :
+**Classe DataLoader**
     
 Elle est responsable de récupérer des données historiques de prix depuis Binance et des données de capitalisation boursière depuis CoinGecko.<br>
 Ses différentes méthodes sont:<br>
@@ -20,12 +20,12 @@ Ses différentes méthodes sont:<br>
 - combine_data : Combine les données historiques de prix pour toutes les paires de trading dans un seul DataFrame.<br>
 
 
-    Classe AbstractStrategy :
+**Classe AbstractStrategy**
     
 Une classe de base abstraite définissant deux méthodes abstraites : calculate_weights et apply_strategy.<br>
 
 
-    Classe MarketCapStrategy :
+**Classe MarketCapStrategy**
     
 - Hérite de AbstractStrategy.
 - Implémente des méthodes pour calculer des poids basés sur la capitalisation boursière et pour rééquilibrer le portefeuille en conséquence.
@@ -40,30 +40,36 @@ Initialise la stratégie avec les données nécessaires, les capitalisations bou
     - apply_strategy(self) : Applique la stratégie en effectuant le rééquilibrage si nécessaire.<br>
 
 
-    Classe EqualWeightStrategy :<br>
+**Classe EqualWeightStrategy**
     
-Elle est structurée de la même manière que la classe précedente. Les principales différences étant les inputs pris en compte (pas de market-cap ici) ainsi que dans la façon dont les poids des actifs sont calculés (tous équivalents).<br>
+Elle est structurée de la même manière que la classe précedente. La principale différence étant la manière dont les poids ainsi que les allocations initiales de chaque actif sont attribués.
 
 
-    Classe PriceWeightedStrategy :
+**Classe PriceWeightedStrategy**
   
-Suis la même structure que la classe précedente hormi dans la façon dont les poids des actifs sont calculés (en fonction de leur prix).<br>
+Ici encore, la classe suit la même structure que la classe précedente hormi dans la façon dont les poids des actifs sont calculés (en fonction de leur prix).<br>
 
 
-    Classe Backtest :
+**Classe Backtest**
   
-  Exécute le processus de backtesting en itérant à travers les données historiques et en appliquant la stratégie.<br>
+Exécute le processus de backtesting en itérant à travers les données historiques et en appliquant la stratégie.<br>
 
 
-    Classe PerformanceMetrics :
+**Classe PerformanceMetrics**
   
 - Fournit des méthodes statiques pour calculer diverses métriques de performance telles que les rendements, les rendements cumulatifs, la volatilité, le ratio de Sharpe, le ratio de Sortino, le drawdown maximal et le rendement annualisé.
 - Inclut une méthode pour afficher un tableau de bord de performance.
 
 
-    Classe IndexCompositionTracker :
+**Classe IndexCompositionTracker**
   
 - Suit la composition de l'indice (portefeuille) à différents moments.
-- Utilisation Exemplaire :
-- Des instances de EqualWeightStrategy et PriceWeightedStrategy sont créées et testées en utilisant le chargeur de données fourni (DataLoader).
-Les métriques de performance sont calculées et affichées en utilisant la classe PerformanceMetrics.
+
+
+
+**Utilisation Exemplaire par l'utilisateur**
+
+- L'utilisateur récupère des données en séléctionnant une date de début, une date de fin ainsi que ses clés API Binance afin d'exécuter la classe DataLoader.<br>
+- Ensuite, l'utilisateur exécute la classe correspondant à la stratégie qu'il souhaite mettre en place en y intégrant les données récupérées dans la classe DataLoader puis en choissant une fenêtre de rebalancement, un capital de départ et les dates d'arrivée et de sortie.<br>
+- Enfin, afin d'afficher le dashboard de performance, l'utilisateur devra d'abord exécuter la méthode 'calculate returns' de la classe PerformanceMetrics puis la méthode 'stat_dashboard' de la même classe en y ajoutant les valeurs de portefeuille de la stratégie ainsi que ses rendements journaliers.
+
