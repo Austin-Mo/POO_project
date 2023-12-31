@@ -61,15 +61,21 @@ Exécute le processus de backtesting en itérant à travers les données histori
 - Inclut une méthode pour afficher un tableau de bord de performance.
 
 
-**Classe IndexCompositionTracker**
-  
-- Suit la composition de l'indice (portefeuille) à différents moments.
-
-
-
 **Utilisation Exemplaire par l'utilisateur**
 
 - L'utilisateur récupère des données en séléctionnant une date de début, une date de fin ainsi que ses clés API Binance afin d'exécuter la classe DataLoader.<br>
 - Ensuite, l'utilisateur exécute la classe correspondant à la stratégie qu'il souhaite mettre en place en y intégrant les données récupérées dans la classe DataLoader puis en choissant une fenêtre de rebalancement, un capital de départ et les dates d'arrivée et de sortie.<br>
 - Enfin, afin d'afficher le dashboard de performance, l'utilisateur devra d'abord exécuter la méthode 'calculate returns' de la classe PerformanceMetrics puis la méthode 'stat_dashboard' de la même classe en y ajoutant les valeurs de portefeuille de la stratégie ainsi que ses rendements journaliers.
+
+**A noter**
+
+Le code "Code_avec_fenetre.py" est un code non terminé mais plutôt fonctionnel qui permet d'utiliser le Backtester de manière plus intéractive. En effet, nous pouvons sélectionner les dates, les cryptomonnaies ainsi que la stratégies pour ensuite afficher les performances. Ainsi la classe "CryptoSelector" permet de gérer les fenêtres et les boutons permettant de déclancher les actions (sélections crypto, stratégies etc). 
+
+Cependant, ce code n'est pas totalement terminé puisque les metrics retournés nous semblent partiellement fausses. Egalement, la stratégie "PriceWeightedStrategy" n'a pas été intégrée à la fenêtre.
+
+**Piste d'améliorations**
+
+- Terminer le code avec la fenêtre 
+- Comparaison à un benchmark
+- Changement d'échelle de trading (weekly, monthly etc)
 
