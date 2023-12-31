@@ -4,27 +4,24 @@ Created on Sun Dec 31 18:30:37 2023
 
 @author: paul-
 """
-
-from pycoingecko import CoinGeckoAPI
-from binance.client import Client
 import pandas as pd
-from datetime import datetime
-import numpy as np
-from abc import ABC, abstractmethod
-import matplotlib.pyplot as plt
-import seaborn as sns
-import calendar
+from Dataloader import DataLoader
+from Strategy import EqualWeightStrategy, MarketCapStrategy, PriceWeightedStrategy
+from Performance_Metrics import PerformanceMetrics
 
+if __name__ == '__main__':
+    start_date = "2021-12-30"
+    end_date = "2023-11-30"
+    market_caps = pd.read_csv("./market_caps_data.csv", index_col=0, parse_dates=True)
+    datas = DataLoader(start_date, end_date)
+    # datas.market_caps()
 
-start_date = "2021-12-30"
-end_date = "2023-11-30"
-market_caps = pd.read_csv("C:/Users/paul-/OneDrive/Documents/M2 Dauphine/M2/Python POO/market_caps_data.csv", index_col=0, parse_dates=True)
-datas= DataLoader(start_date, end_date)
-#datas.market_caps()
-       
-equiweighted = EqualWeightStrategy(datas, 10, 100000, start_date, end_date)
-market_caps_strat = MarketCapStrategy(datas, market_caps, 10, 100000, start_date, end_date)
-priceweighted = PriceWeightedStrategy(datas, 10, 10000, start_date, end_date)
-PerformanceMetrics.stat_dashboard(market_caps_strat.portfolio_value)
-PerformanceMetrics.stat_dashboard(equiweighted.portfolio_value)
-PerformanceMetrics.stat_dashboard(priceweighted.portfolio_value)
+    equiweighted = EqualWeightStrategy(data=datas, rebalancing_window=10, initial_capital=100000,
+                                       start_date=start_date, end_date=end_date)
+    market_caps_strat = MarketCapStrategy(data=datas, market_caps=market_caps, rebalancing_window=10,
+                                          initial_capital=100000, start_date=start_date, end_date=end_date)
+    priceweighted = PriceWeightedStrategy(data=datas, rebalancing_window=10, initial_capital=100000,
+                                          start_date=start_date, end_date=end_date)
+    PerformanceMetrics.stat_dashboard(portfolio_values=market_caps_strat.portfolio_value, risk_free_rate=0)
+    PerformanceMetrics.stat_dashboard(portfolio_values=market_caps_strat.portfolio_value, risk_free_rate=0)
+    PerformanceMetrics.stat_dashboard(portfolio_values=market_caps_strat.portfolio_value, risk_free_rate=0)

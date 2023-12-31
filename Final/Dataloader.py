@@ -4,6 +4,10 @@ Created on Sun Dec 31 18:27:57 2023
 
 @author: paul-
 """
+from pycoingecko import CoinGeckoAPI
+from binance.client import Client
+import pandas as pd
+from datetime import datetime
 
 class DataLoader:
 
@@ -12,8 +16,6 @@ class DataLoader:
                                       '4xWeaVfyiWTmS0kAsdp03xSqZfu0Z42LYqj9LmSESiFYYTYyoWmXBQwSzjdN2Tol')
          self.start_date = start_date
          self.end_date = end_date
-         #self.start_datetime = int(datetime.strptime(start_date, "%Y-%m-%d").timestamp()*1000)
-         #self.end_datetime = int(datetime.strptime(end_date, "%Y-%m-%d").timestamp()*1000)
          self.symbols_list = self.get_tickers()
          self.df = self.combine_data()
 
