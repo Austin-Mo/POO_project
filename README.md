@@ -73,9 +73,13 @@ Le code "Code_avec_fenetre.py" est un code non terminé mais plutôt fonctionnel
 
 Cependant, ce code n'est pas totalement terminé puisque les metrics retournés nous semblent partiellement fausses. Egalement, la stratégie "PriceWeightedStrategy" n'a pas été intégrée à la fenêtre.
 
+Nous l'avons donc intégré au rendu final pour que vous puissiez voir/tester ce qui été prévu.
+
+NB: Pour l'utiliser il faut télécharger le package tkcalendar.
+
 **Piste d'améliorations**
 
 - Terminer le code avec la fenêtre 
-- Comparaison à un benchmark
+- Comparaison à un benchmark (cours du bitcoin, S&P500)
 - Changement d'échelle de trading (weekly, monthly etc)
 
