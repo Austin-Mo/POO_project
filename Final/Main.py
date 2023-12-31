@@ -10,7 +10,7 @@ from Strategy import EqualWeightStrategy, MarketCapStrategy, PriceWeightedStrate
 from Performance_Metrics import PerformanceMetrics
 
 if __name__ == '__main__':
-    start_date = "2021-12-30"
+    start_date = "2019-01-30"
     end_date = "2023-11-30"
     market_caps = pd.read_csv("./market_caps_data.csv", index_col=0, parse_dates=True)
     datas = DataLoader(start_date, end_date)
