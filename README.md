@@ -65,7 +65,7 @@ Exécute le processus de backtesting en itérant à travers les données histori
 
 - L'utilisateur récupère des données en séléctionnant une date de début, une date de fin ainsi que ses clés API Binance afin d'exécuter la classe DataLoader.<br>
 - Ensuite, l'utilisateur exécute la classe correspondant à la stratégie qu'il souhaite mettre en place en y intégrant les données récupérées dans la classe DataLoader puis en choissant une fenêtre de rebalancement, un capital de départ et les dates d'arrivée et de sortie.<br>
-- Enfin, afin d'afficher le dashboard de performance, l'utilisateur devra d'abord exécuter la méthode 'calculate returns' de la classe PerformanceMetrics puis la méthode 'stat_dashboard' de la même classe en y ajoutant les valeurs de portefeuille de la stratégie ainsi que ses rendements journaliers.
+- Enfin, afin d'afficher le dashboard de performance, l'utilisateur devra exécuter la méthode 'stat_dashboard' en y ajoutant les valeurs de portefeuille de la stratégie ainsi que ses rendements journaliers.
 
 **A noter**
 
