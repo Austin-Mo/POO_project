@@ -82,4 +82,9 @@ NB: Pour l'utiliser il faut télécharger le package tkcalendar.
 - Terminer le code avec la fenêtre 
 - Comparaison à un benchmark (cours du bitcoin, S&P500)
 - Changement d'échelle de trading (weekly, monthly etc)
+- Amélioration de la stratégie MarketCap afin de sélectionner les 40 plus grosses marketcap au quotidien
+
+**Difficultés**
+
+Nous avons rencontré des difficultés sur la récupération des market cap. En effet, le code prennait plusieurs dizaines de minutes à tourné. Nous avons donc choisi d'importer les datas des market cap sur un csv pour accroitre l'exécution du code. Nous avions également tenté de faire du multiprocessing pour la récupération des données, mais nous l'avons retiré car cela rendait le code indébuggable. 
 
