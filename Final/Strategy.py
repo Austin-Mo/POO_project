@@ -4,6 +4,8 @@ Created on Sun Dec 31 18:27:13 2023
 
 @author: paul-
 """
+#classe asbtraite utilisée pour specifier les méthodes obligatorie de nos strategies
+#les 3 stratégies sont construitent selon une logique très similaire
 import pandas as pd
 from datetime import datetime
 import numpy as np
@@ -37,7 +39,8 @@ class MarketCapStrategy(AbstractStrategy):
 
         start_date_datetime = datetime.strptime(start_date, '%Y-%m-%d')
         available_assets = [coin for coin in data.symbols_list if start_date_datetime in data.dataframes[coin].index]
-        # ne repartir le acpital inital qu'entre les cryptos existentes au depart
+        #available_assets est utilisé pour ne répartir le capital qu'entre les actifs qui existente à la currente_date, c'est pourquoi un attribut self.available_assets sera ensuite instancié
+        # et régulièrement mis à jour
 
         num_assets = len(available_assets)
         initial_allocation = initial_capital / num_assets
@@ -45,6 +48,7 @@ class MarketCapStrategy(AbstractStrategy):
         for coin in data.symbols_list:
             allocation = initial_allocation if coin in available_assets else 0
             self.portfolio.at[start_date, coin] = allocation
+         #pour les coins existants à la date de départ, on va venir répartir le capital initial équitablement
 
         self.portfolio_value.at[start_date, 'Value'] = initial_capital
 
@@ -65,11 +69,13 @@ class MarketCapStrategy(AbstractStrategy):
         weights = {}
         for coin in self.data.symbols_list:
             if (coin in self.available_assets) and (coin in current_market_caps.index):
+                #on vient vérifier qu'on dispose des prix et des markets_caps
                 weights[coin] = current_market_caps[coin] / total_market_cap
             else:
                 weights[coin] = 0
         return weights
-
+        
+     #renvoie le rendement d'un jour sur l'autre
     def calculate_returns(self, coin):
         current_date_index = self.data.dataframes[coin].index.get_loc(self.backtest.current_date)
         self.previous_date = self.data.dataframes[coin].index[current_date_index - 1]
@@ -114,7 +120,7 @@ class MarketCapStrategy(AbstractStrategy):
                     self.portfolio.at[self.backtest.current_date, coin] = self.portfolio_value.loc[
                                                                               self.backtest.current_date, 'Value'] * \
                                                                           self.weights[-1][coin]
-
+    #vient modifier la position d'un actif précis au sein du portefeuille
     def go_short(self, coin):
 
         r = self.calculate_returns(coin)
@@ -133,6 +139,7 @@ class MarketCapStrategy(AbstractStrategy):
         amount_to_buy = target_value - new_value
         self.portfolio.at[self.backtest.current_date, coin] += amount_to_buy
 
+    # cette méthode va venir rebalancer le portefeuille si le rebalancement au date de rebalancement, et calculer les valeurs de protefeuilles sinon
     def apply_strategy(self):
         if self.last_rebalancing is None or (
                 self.backtest.current_date - self.last_rebalancing).days >= self.rebalancing_window:
