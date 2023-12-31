@@ -132,47 +132,53 @@ class AbstractStrategy(ABC):
 
 ### Attention pour cette strategie il faut la marketcap
 class MarketCapStrategy(AbstractStrategy):
-
-    def __init__(self, data, market_caps, rebalancing_window, initial_capital, start_date, end_date, selected_cryptos):
+    
+    def __init__(self, data, market_caps, rebalancing_window, initial_capital, start_date, end_date):
         self.data = data
         self.market_caps = market_caps
         self.weights = [{coin: [0] for coin in data.symbols_list}] # initialisation des poids à 0
         self.rebalancing_window = rebalancing_window
         self.initial_capital = initial_capital
-        self.selected_cryptos = selected_cryptos
-
+        
+        #end_date = datetime.strptime(end_date, '%Y-%m-%d')     
+        #end_date -= timedelta(days=1)
+        #end_date = end_date.strftime('%Y-%m-%d')
+        
         self.start_date = start_date
         dates = pd.date_range(start=start_date, end=end_date)
         self.portfolio = pd.DataFrame(0,index=dates, columns=data.symbols_list)
         self.portfolio_value = pd.DataFrame(0,index=dates, columns=['Value'])
-
+        
         start_date_datetime = datetime.strptime(start_date, '%Y-%m-%d')
         available_assets = [coin for coin in data.symbols_list if start_date_datetime in data.dataframes[coin].index]
         #ne repartir le acpital inital qu'entre les cryptos existentes au depart
-
+        
         num_assets = len(available_assets)
         initial_allocation = initial_capital / num_assets
-
+        
         for coin in data.symbols_list:
             allocation = initial_allocation if coin in available_assets else 0
             self.portfolio.at[start_date, coin] = allocation
-
-
+            
+            
         self.portfolio_value.at[start_date, 'Value'] = initial_capital
-
-
+       
+        
         self.last_rebalancing = None
-
+        
         self.backtest = Backtest(self, data, start_date, end_date)
         self.backtest.run()
 
     def calculate_weights(self):
-
+    
         self.available_assets = [coin for coin in self.data.symbols_list if self.backtest.current_date in self.data.dataframes[coin].index]
         current_market_caps = self.market_caps.loc[self.backtest.current_date]
 
+        #total_market_cap = current_market_caps[self.available_assets].sum()
+        
+        #total_market_cap = current_market_caps[[coin for coin in self.available_assets if coin in current_market_caps.columns]].sum()
         total_market_cap = current_market_caps[[coin for coin in self.available_assets if coin in current_market_caps.index]].sum()
-
+    
         weights = {}
         for coin in self.data.symbols_list:
             if (coin in self.available_assets) and (coin in current_market_caps.index):
@@ -180,69 +186,69 @@ class MarketCapStrategy(AbstractStrategy):
             else:
                 weights[coin] = 0
         return weights
-
-    def calculate_returns(self, coin):
+    
+    def calculate_returns(self,coin):
         current_date_index = self.data.dataframes[coin].index.get_loc(self.backtest.current_date)
         self.previous_date = self.data.dataframes[coin].index[current_date_index - 1]
         previous_value = float(self.data.dataframes[coin].loc[self.previous_date, 'Close'])
         current_value = float(self.data.dataframes[coin].loc[self.backtest.current_date, 'Close'])
         r = np.log(current_value / previous_value)
         return r
-
+    
     def maj_portfolio_value(self):
-
+        
         for coin in self.available_assets:
             r = self.calculate_returns(coin)
             current_value = self.portfolio.loc[self.previous_date, coin] * (1+r)
             self.portfolio.at[self.backtest.current_date, coin] = current_value
-
+            
         total_portfolio_value = self.portfolio.loc[self.backtest.current_date].sum()
         self.portfolio_value.at[self.backtest.current_date, 'Value'] = total_portfolio_value
-
+            
 
     def rebalancing(self):
-
+        
         weights = self.calculate_weights()
         if self.backtest.current_date != datetime.strptime(self.start_date, '%Y-%m-%d'):
-
+            
             self.weights.append(weights)
             self.maj_portfolio_value()
 
             for coin in self.available_assets:
-
+                
                 if self.portfolio.loc[self.previous_date, coin] != 0:
                     r = self.calculate_returns(coin)
-                    current_value = self.portfolio.loc[self.previous_date, coin] * (1+r)
-
+                    current_value = self.portfolio.loc[self.previous_date, coin] * (1+r) 
+                    
                     self.portfolio.at[self.backtest.current_date, coin] = current_value
                     target = self.portfolio_value.loc[self.backtest.current_date, 'Value']*self.weights[-1][coin]
-
+                    
                     if target > current_value:
                         self.go_long(coin)
-
+                        
                     elif target < current_value:
                         self.go_short(coin)
                 else:
                     self.portfolio.at[self.backtest.current_date, coin] = self.portfolio_value.loc[self.backtest.current_date, 'Value']*self.weights[-1][coin]
-
+    
     def go_short(self, coin):
-
+        
         r = self.calculate_returns(coin)
         new_value = self.portfolio.at[self.previous_date, coin] * (1 + r)
         target_value = self.weights[-1][coin] * self.portfolio_value.loc[self.backtest.current_date, 'Value']
-
-        amount_to_sell = new_value - target_value
+        
+        amount_to_sell = new_value - target_value      
         self.portfolio.at[self.backtest.current_date, coin] -= amount_to_sell
-
+        
     def go_long(self, coin):
-
+        
         r = self.calculate_returns(coin)
         new_value = self.portfolio.at[self.previous_date, coin] * (1 + r)
         target_value = self.weights[-1][coin] * self.portfolio_value.loc[self.backtest.current_date, 'Value']
-
-        amount_to_buy = target_value - new_value
+    
+        amount_to_buy = target_value - new_value  
         self.portfolio.at[self.backtest.current_date, coin] += amount_to_buy
-
+        
     def apply_strategy(self):
         if self.last_rebalancing is None or (self.backtest.current_date - self.last_rebalancing).days >= self.rebalancing_window:
             self.rebalancing()
@@ -254,134 +260,128 @@ class MarketCapStrategy(AbstractStrategy):
                 previous_date = self.data.dataframes[coin].index[current_date_index - 1]
                 previous_value = float(self.data.dataframes[coin].loc[previous_date, 'Close'])
                 current_value = float(self.data.dataframes[coin].loc[self.backtest.current_date, 'Close'])
-
+                
                 r = np.log(current_value) - np.log(previous_value)
                 new_value = self.portfolio.loc[previous_date, coin] * (1 + r)
                 self.portfolio.at[self.backtest.current_date, coin] = new_value
-
+                
+            
             self.portfolio_value.at[self.backtest.current_date, 'Value'] = self.portfolio.loc[self.backtest.current_date].sum()
-
-
+              
 class EqualWeightStrategy(AbstractStrategy):
-
-    def __init__(self, data, rebalancing_window, initial_capital, start_date, end_date, selected_cryptos):
+    
+    def __init__(self, data, rebalancing_window, initial_capital, start_date, end_date):
         self.data = data
-        self.weights = [{coin: [0] for coin in data.symbols_list}]  # initialisation des poids à 0
+        self.weights = [{coin: [0] for coin in data.symbols_list}] # initialisation des poids à 0
         self.rebalancing_window = rebalancing_window
         self.initial_capital = initial_capital
-
-        self.selected_cryptos = selected_cryptos
-        self.start_date = start_date
-
-        #end_date = datetime.strptime(end_date, '%Y-%m-%d')
+        
+        #end_date = datetime.strptime(end_date, '%Y-%m-%d')     
         #end_date -= timedelta(days=1)
         #end_date = end_date.strftime('%Y-%m-%d')
-
+        
         dates = pd.date_range(start=start_date, end=end_date)
-        self.portfolio = pd.DataFrame(0, index=dates, columns=data.symbols_list)
-        self.portfolio_value = pd.DataFrame(0, index=dates, columns=['Value'])
-
+        self.portfolio = pd.DataFrame(0,index=dates, columns=data.symbols_list)
+        self.portfolio_value = pd.DataFrame(0,index=dates, columns=['Value'])
+        
         start_date_datetime = datetime.strptime(start_date, '%Y-%m-%d')
         available_assets = [coin for coin in data.symbols_list if start_date_datetime in data.dataframes[coin].index]
         #ne repartir le acpital inital qu'entre les cryptos existentes au depart
-
+        
         num_assets = len(available_assets)
         initial_allocation = initial_capital / num_assets
-
+        
         for coin in data.symbols_list:
             allocation = initial_allocation if coin in available_assets else 0
             self.portfolio.at[start_date, coin] = allocation
-
-
+            
+            
         self.portfolio_value.at[start_date, 'Value'] = initial_capital
-
-
+       
+        
         self.last_rebalancing = None
-
+        
         self.backtest = Backtest(self, data, start_date, end_date)
         self.backtest.run()
 
     def calculate_weights(self):
-
-        self.available_assets = [coin for coin in self.selected_cryptos if
-                                 self.backtest.current_date in self.data.dataframes[coin].index]
+        
+        self.available_assets = [coin for coin in self.data.symbols_list if self.backtest.current_date in self.data.dataframes[coin].index]
         num_assets = len(self.available_assets)
-        if num_assets == 0:
-            weight = 0
-            return print(f'No data for {self.selected_cryptos} as at date {self.backtest.current_date}')
-        else:
-            weight = 1 / num_assets
+        weight = 1 / num_assets
         weights = {coin: weight for coin in self.available_assets}
-
+    
         for coin in self.data.symbols_list:
             if coin not in self.available_assets:
                 weights[coin] = 0
-
+                
         return weights
-
-    def calculate_returns(self, coin):
+    
+    def calculate_returns(self,coin):
         current_date_index = self.data.dataframes[coin].index.get_loc(self.backtest.current_date)
         self.previous_date = self.data.dataframes[coin].index[current_date_index - 1]
         previous_value = float(self.data.dataframes[coin].loc[self.previous_date, 'Close'])
         current_value = float(self.data.dataframes[coin].loc[self.backtest.current_date, 'Close'])
         r = np.log(current_value / previous_value)
         return r
-
+    
     def maj_portfolio_value(self):
-
+        
         for coin in self.available_assets:
             r = self.calculate_returns(coin)
             current_value = self.portfolio.loc[self.previous_date, coin] * (1+r)
             self.portfolio.at[self.backtest.current_date, coin] = current_value
-
+            
         total_portfolio_value = self.portfolio.loc[self.backtest.current_date].sum()
         self.portfolio_value.at[self.backtest.current_date, 'Value'] = total_portfolio_value
-
-
+            
+            
+            
+  
     def rebalancing(self):
         weights = self.calculate_weights()
-        if self.backtest.current_date != datetime.strptime(self.start_date, '%Y-%m-%d'):
-
+        if self.backtest.current_date != datetime.strptime(start_date, '%Y-%m-%d'):
+            
             self.weights.append(weights)
             self.maj_portfolio_value()
 
             for coin in self.available_assets:
-
+                
                 if self.portfolio.loc[self.previous_date, coin] != 0:
                     r = self.calculate_returns(coin)
                     current_value = self.portfolio.loc[self.previous_date, coin] * (1+r) #problème ici, si première valeur = 0 ça se mettra pas à jour
-
+                    
                     self.portfolio.at[self.backtest.current_date, coin] = current_value
                     target = self.portfolio_value.loc[self.backtest.current_date, 'Value']/len(self.available_assets)
-
+                    
                     if target > current_value:
                         self.go_long(coin)
-
+                        
                     elif target < current_value:
                         self.go_short(coin)
                 else:
                     self.portfolio.at[self.backtest.current_date, coin] = self.portfolio_value.at[self.backtest.current_date, 'Value']/len(self.available_assets)
-
-
-
+                    
+            
+            
     def go_short(self, coin):
-
+        
         r = self.calculate_returns(coin)
         new_value = self.portfolio.at[self.previous_date, coin] * (1 + r)
         target_value = self.weights[-1][coin] * self.portfolio_value.loc[self.backtest.current_date, 'Value']
-
-        amount_to_sell = new_value - target_value
+        
+        amount_to_sell = new_value - target_value      
         self.portfolio.at[self.backtest.current_date, coin] -= amount_to_sell
-
+        
     def go_long(self, coin):
-
+        
         r = self.calculate_returns(coin)
         new_value = self.portfolio.at[self.previous_date, coin] * (1 + r)
         target_value = self.weights[-1][coin] * self.portfolio_value.loc[self.backtest.current_date, 'Value']
-
-        amount_to_buy = target_value - new_value
+    
+        amount_to_buy = target_value - new_value  
         self.portfolio.at[self.backtest.current_date, coin] += amount_to_buy
-
+        
     def apply_strategy(self):
         if self.last_rebalancing is None or (self.backtest.current_date - self.last_rebalancing).days >= self.rebalancing_window:
             self.rebalancing()
@@ -393,13 +393,146 @@ class EqualWeightStrategy(AbstractStrategy):
                 previous_date = self.data.dataframes[coin].index[current_date_index - 1]
                 previous_value = float(self.data.dataframes[coin].loc[previous_date, 'Close'])
                 current_value = float(self.data.dataframes[coin].loc[self.backtest.current_date, 'Close'])
-
+                
                 r = np.log(current_value) - np.log(previous_value)
                 new_value = self.portfolio.loc[previous_date, coin] * (1 + r)
                 self.portfolio.at[self.backtest.current_date, coin] = new_value
-
+                
+            
             self.portfolio_value.at[self.backtest.current_date, 'Value'] = self.portfolio.loc[self.backtest.current_date].sum()
+            
+class PriceWeightedStrategy(AbstractStrategy):
+    
+    def __init__(self, data, rebalancing_window, initial_capital, start_date, end_date):
+        self.data = data
+        self.weights = [{coin: [0] for coin in data.symbols_list}] # initialisation des poids à 0
+        self.rebalancing_window = rebalancing_window
+        self.initial_capital = initial_capital
+        
+        #end_date = datetime.strptime(end_date, '%Y-%m-%d')     
+        #end_date -= timedelta(days=1)
+        #end_date = end_date.strftime('%Y-%m-%d')
+        
+        dates = pd.date_range(start=start_date, end=end_date)
+        self.portfolio = pd.DataFrame(0,index=dates, columns=data.symbols_list)
+        self.portfolio_value = pd.DataFrame(0,index=dates, columns=['Value'])
+        
+        start_date_datetime = datetime.strptime(start_date, '%Y-%m-%d')
+        available_assets = [coin for coin in data.symbols_list if start_date_datetime in data.dataframes[coin].index]
+        #ne repartir le acpital inital qu'entre les cryptos existentes au depart
+        
+        prices = {coin: float(self.data.dataframes[coin].loc[start_date_datetime]['Close']) for coin in available_assets}
+        total_price = sum(prices.values())
+        
+        initial_allocation = {coin: self.initial_capital * price / total_price for coin, price in prices.items()}
+        
+        for coin in data.symbols_list:
+            allocation = allocation = initial_allocation[coin] if coin in available_assets else 0
+            self.portfolio.at[start_date, coin] = allocation
+            
+      
+        self.portfolio_value.at[start_date, 'Value'] = initial_capital
+       
+        
+        self.last_rebalancing = None
+        
+        self.backtest = Backtest(self, data, start_date, end_date)
+        self.backtest.run()
 
+    def calculate_weights(self):
+       # Calculate weights based on the closing prices of assets
+       self.available_assets = [coin for coin in self.data.symbols_list if self.backtest.current_date in self.data.dataframes[coin].index]
+       weights = {coin: float(self.data.dataframes[coin].loc[self.backtest.current_date]['Close']) for coin in self.available_assets}
+       
+       # Normalize weights to ensure the sum is equal to 1
+       total_price = sum(weights.values())
+       weights = {coin: price / total_price for coin, price in weights.items()}
+       
+       return weights
+    
+    def calculate_returns(self,coin):
+        current_date_index = self.data.dataframes[coin].index.get_loc(self.backtest.current_date)
+        self.previous_date = self.data.dataframes[coin].index[current_date_index - 1]
+        previous_value = float(self.data.dataframes[coin].loc[self.previous_date, 'Close'])
+        current_value = float(self.data.dataframes[coin].loc[self.backtest.current_date, 'Close'])
+        r = np.log(current_value / previous_value)
+        return r
+    
+    def maj_portfolio_value(self):
+        
+        for coin in self.available_assets:
+            r = self.calculate_returns(coin)
+            current_value = self.portfolio.loc[self.previous_date, coin] * (1+r)
+            self.portfolio.at[self.backtest.current_date, coin] = current_value
+            
+        total_portfolio_value = self.portfolio.loc[self.backtest.current_date].sum()
+        self.portfolio_value.at[self.backtest.current_date, 'Value'] = total_portfolio_value
+            
+            
+            
+    
+    def rebalancing(self):
+        weights = self.calculate_weights()
+        if self.backtest.current_date != datetime.strptime(start_date, '%Y-%m-%d'):
+            
+            self.weights.append(weights)
+            self.maj_portfolio_value()
+
+            for coin in self.available_assets:
+                
+                if self.portfolio.loc[self.previous_date, coin] != 0:
+                    r = self.calculate_returns(coin)
+                    current_value = self.portfolio.loc[self.previous_date, coin] * (1+r) #problème ici, si première valeur = 0 ça se mettra pas à jour
+                    
+                    self.portfolio.at[self.backtest.current_date, coin] = current_value
+                    target = self.portfolio_value.loc[self.backtest.current_date, 'Value'] * self.weights[-1][coin]
+                    
+                    if target > current_value:
+                        self.go_long(coin)
+                        
+                    elif target < current_value:
+                        self.go_short(coin)
+                else:
+                    self.portfolio.at[self.backtest.current_date, coin] = self.portfolio_value.loc[self.backtest.current_date, 'Value']*self.weights[-1][coin]
+                    
+            
+            
+    def go_short(self, coin):
+        
+        r = self.calculate_returns(coin)
+        new_value = self.portfolio.at[self.previous_date, coin] * (1 + r)
+        target_value = self.weights[-1][coin] * self.portfolio_value.loc[self.backtest.current_date, 'Value']
+        
+        amount_to_sell = new_value - target_value      
+        self.portfolio.at[self.backtest.current_date, coin] -= amount_to_sell
+        
+    def go_long(self, coin):
+        
+        r = self.calculate_returns(coin)
+        new_value = self.portfolio.at[self.previous_date, coin] * (1 + r)
+        target_value = self.weights[-1][coin] * self.portfolio_value.loc[self.backtest.current_date, 'Value']
+    
+        amount_to_buy = target_value - new_value  
+        self.portfolio.at[self.backtest.current_date, coin] += amount_to_buy
+        
+    def apply_strategy(self):
+        if self.last_rebalancing is None or (self.backtest.current_date - self.last_rebalancing).days >= self.rebalancing_window:
+            self.rebalancing()
+            self.last_rebalancing = self.backtest.current_date
+        else:
+            self.available_assets = [coin for coin in self.data.symbols_list if self.backtest.current_date in self.data.dataframes[coin].index]
+            for coin in self.available_assets:
+                current_date_index = self.data.dataframes[coin].index.get_loc(self.backtest.current_date)
+                previous_date = self.data.dataframes[coin].index[current_date_index - 1]
+                previous_value = float(self.data.dataframes[coin].loc[previous_date, 'Close'])
+                current_value = float(self.data.dataframes[coin].loc[self.backtest.current_date, 'Close'])
+                
+                r = np.log(current_value) - np.log(previous_value)
+                new_value = self.portfolio.loc[previous_date, coin] * (1 + r)
+                self.portfolio.at[self.backtest.current_date, coin] = new_value
+                
+            self.portfolio_value.at[self.backtest.current_date, 'Value'] = self.portfolio.loc[self.backtest.current_date].sum()
+            
 
 
 class Backtest:
@@ -552,7 +685,7 @@ class PerformanceMetrics:
         ax.set_yticklabels(heatmap_data.index, rotation=0)
 
     @staticmethod
-    def stat_dashboard(portfolio_values, window, risk_free_rate=0):
+    def stat_dashboard(portfolio_values, risk_free_rate=0):
         returns = PerformanceMetrics.calculate_log_returns(portfolio_values)
         cumulative_returns = PerformanceMetrics.cumulative_returns(portfolio_values)
         total_return = PerformanceMetrics.calculate_total_return(portfolio_values)
@@ -590,177 +723,16 @@ class PerformanceMetrics:
 
         plt.tight_layout()
         plt.show(block=False)
-        window.mainloop()
-
-class CryptoSelector:
-    def __init__(self):
-        self.window = tk.Tk()
-        self.window.title("Backtest Cryptocurrencies")
-
-        self.date_frame = tk.Frame(self.window)
-        self.crypto_frame = tk.Frame(self.window)
-        self.strategy_frame = tk.Frame(self.window)
- 
-        self.date_frame.pack()
-        self.crypto_frame.pack_forget()
-        self.strategy_frame.pack_forget()
-
-        self.create_date_widgets()
-        self.previous_frame = None
-
-    def create_date_widgets(self):
-        self.start_date_label = tk.Label(self.date_frame, text="Start Date:")
-        self.start_date_label.pack()
-        self.start_date_entry = DateEntry(self.date_frame, date_pattern='y-mm-dd')
-        self.start_date_entry.set_date(datetime.now() - timedelta(days=365*2))
-        self.start_date_entry.pack()
-
-        self.end_date_label = tk.Label(self.date_frame, text="End Date:")
-        self.end_date_label.pack()
-        self.end_date_entry = DateEntry(self.date_frame, date_pattern='y-mm-dd', maxdate=datetime.now() - timedelta(days=1))
-        self.end_date_entry.pack()
-
-        self.submit_button = ttk.Button(self.date_frame, text="Submit", command=self.select_cryptos)
-        self.submit_button.pack()
-
-    def clear_frame(self, frame):
-        for widget in frame.winfo_children():
-            widget.destroy()
-
-    def select_cryptos(self):
-        start_date = self.start_date_entry.get_date()
-        end_date = self.end_date_entry.get_date()
-
-        if start_date >= end_date:
-            messagebox.showerror("Error", "Start date must be earlier than end date.")
-            return
-
-        self.start_date = start_date.strftime('%Y-%m-%d')
-        self.end_date = end_date.strftime('%Y-%m-%d')
-        print(f'From {self.start_date} to {self.end_date}')
-        self.data_loader = DataLoader(self.start_date, self.end_date)
-        symbols_list = self.data_loader.symbols_list
-
-        # Set previous_frame before hiding the date frame
-        self.previous_frame = self.date_frame
-        self.date_frame.pack_forget()
-        self.crypto_frame.pack()
-
-        # Add a title to the cryptocurrency selection page
-        self.crypto_title_label = tk.Label(self.crypto_frame, text="Select the cryptocurrencies for your strategy:")
-        self.crypto_title_label.pack()
-
-        self.crypto_listbox = tk.Listbox(self.crypto_frame, listvariable=tk.StringVar(value=symbols_list), selectmode="multiple")
-        self.crypto_listbox.pack()
-
-        # Ajouter une case à cocher pour sélectionner/désélectionner toutes les cryptomonnaies
-        self.select_all_var = tk.BooleanVar()
-        self.select_all_checkbutton = tk.Checkbutton(self.crypto_frame, text="Select All", variable=self.select_all_var, command=self.select_all_cryptos)
-        self.select_all_checkbutton.pack()
-
-        self.select_button = ttk.Button(self.crypto_frame, text="Select", command=self.select)
-        self.select_button.pack()
-
-    def select_all_cryptos(self):
-        # Si la case à cocher est sélectionnée, sélectionner toutes les cryptomonnaies
-        if self.select_all_var.get():
-            self.crypto_listbox.select_set(0, tk.END)
-        # Sinon, désélectionner toutes les cryptomonnaies
-        else:
-            self.crypto_listbox.select_clear(0, tk.END)
-
-    def select(self):
-        selected_indices = self.crypto_listbox.curselection()
-        self.selected_cryptos = [self.crypto_listbox.get(i) for i in selected_indices]
-        print("Selected Cryptocurrencies: ", self.selected_cryptos)
-
-        self.previous_frame = self.crypto_frame
-        self.crypto_frame.pack_forget()
-
-        # Hide the crypto frame and show the strategy frame
-        self.crypto_frame.pack_forget()
-        self.create_strategy_widgets()
-        self.previous_frame = self.crypto_frame
-        self.crypto_frame.pack_forget()
-
-    def go_back(self):
-        if self.previous_frame is not None:
-            if self.previous_frame == self.date_frame:
-                self.crypto_frame.pack_forget()
-            elif self.previous_frame == self.crypto_frame:
-                self.strategy_frame.pack_forget()
-            self.previous_frame.pack()
-
-    def create_strategy_widgets(self):
-        self.strategy_frame.pack()
-
-        # Check if the strategy widgets already exist
-        if not hasattr(self, 'strategy_label'):
-            self.strategy_label = tk.Label(self.strategy_frame, text="Select Strategy:")
-            self.strategy_var = tk.StringVar()
-            self.strategy_var.set("EqualWeightStrategy")  # default value
-            self.strategy_optionmenu = tk.OptionMenu(self.strategy_frame, self.strategy_var, "EqualWeightStrategy", "MarketCapStrategy")
-            self.initial_capital_label = tk.Label(self.strategy_frame, text="Initial Capital:")
-            self.initial_capital_entry = tk.Entry(self.strategy_frame)
-            self.rebalancing_window_label = tk.Label(self.strategy_frame, text="Rebalancing Window:")
-            self.rebalancing_window_entry = tk.Entry(self.strategy_frame)
-            self.strategy_button = ttk.Button(self.strategy_frame, text="Submit", command=self.submit_strategy)
-            self.back_button = ttk.Button(self.strategy_frame, text="Back", command=self.go_back)
-
-        # Display the strategy widgets
-        self.strategy_label.pack()
-        self.strategy_optionmenu.pack()
-        self.initial_capital_label.pack()
-        self.initial_capital_entry.pack()
-        self.rebalancing_window_label.pack()
-        self.rebalancing_window_entry.pack()
-        self.strategy_button.pack()
-        self.back_button.pack()
-
-    def submit_strategy(self):
-        selected_strategy = self.strategy_var.get()
-        initial_capital = float(self.initial_capital_entry.get())
-        rebalancing_window = int(self.rebalancing_window_entry.get())
-        print("Selected Strategy: ", selected_strategy)
-
-        # Initialize the selected strategy
-        if selected_strategy == "EqualWeightStrategy":
-            strategy = EqualWeightStrategy(data=self.data_loader, rebalancing_window=rebalancing_window, initial_capital=initial_capital,
-                                           start_date=self.start_date, end_date=self.end_date, selected_cryptos=self.selected_cryptos)
-        elif selected_strategy == "MarketCapStrategy":
-            market_caps_df = pd.read_csv(r'C:\Users\morel\PycharmProjects\POO_project\market_caps_data.csv')
-            market_caps_df['date'] = pd.to_datetime(market_caps_df['date'])
-            market_caps_df.set_index('date', inplace=True)
-            strategy = MarketCapStrategy(data=self.data_loader, market_caps=market_caps_df, rebalancing_window=rebalancing_window, initial_capital=initial_capital,
-                                         start_date=self.start_date, end_date=self.end_date, selected_cryptos=self.selected_cryptos)
-
-        # Run the strategy
-        strategy.backtest.run()
-
-        # Calculate returns and display performance dashboard
-        returns = PerformanceMetrics.calculate_log_returns(strategy.portfolio_value)
-
-        PerformanceMetrics.stat_dashboard(strategy.portfolio_value, self.window)
-
-    def run(self):
-        self.window.mainloop()
-
-
-if __name__ == '__main__':
-
-    app = CryptoSelector()
-    app.run()
-
-
-    '''t1 = time.time()
-    start_date = "2019-01-01"
-    end_date = "2022-12-31"
-    
-    datas = DataLoader(binance_api_key, binance_api_secret, start_date, end_date)
-    
-    test = EqualWeightStrategy(datas, 30, 100000, start_date, end_date)
-    r = PerformanceMetrics.calculate_returns(test.portfolio_value)
-    PerformanceMetrics.stat_dashboard(test.portfolio_value, r, 1)
-    t2 = time.time()
-    minutes, seconds = divmod(t2 - t1, 60)
-    print(f'Time: {int(minutes)} minutes {seconds} seconds')'''
+        
+start_date = "2019-01-01"
+end_date = "2023-11-30"
+market_caps = pd.read_csv("C:/Users/paul-/OneDrive/Documents/M2 Dauphine/M2/Python POO/market_caps_data.csv", index_col=0, parse_dates=True)
+datas= DataLoader(start_date, end_date)
+#datas.market_caps()
+       
+equiweighted = EqualWeightStrategy(datas, 10, 100000, start_date, end_date)
+market_caps_strat = MarketCapStrategy(datas, market_caps, 10, 100000, start_date, end_date)
+priceweighted = PriceWeightedStrategy(datas, 10, 10000, start_date, end_date)
+PerformanceMetrics.stat_dashboard(market_caps_strat.portfolio_value)
+PerformanceMetrics.stat_dashboard(equiweighted.portfolio_value)
+PerformanceMetrics.stat_dashboard(priceweighted.portfolio_value)
