@@ -6,7 +6,6 @@ Le code est structuré selon les classes suivantes:<br>
 3- Les classes 'MarketCapStrategy', 'EqualWeightStrategy' et 'PriceWeightedStrategy' qui correspondent aux trois types d'indices que l'utilisateur peut choisir de construire.<br>
 4- La classe 'Backtest' qui exécute le processus de backtesting en itérant à travers les données historiques et en appliquant la stratégie.<br>
 5- La classe 'PerformanceMetrics' qui renvoie les principaux indicateurs de performance d'une stratégie créee par l'utilisateur.<br>
-6- La clase 'IndexCompositionTracker' qui renvoie la composition historique des actifs de la stratégie.<br>
 
 
 **Classe DataLoader**
